@@ -1,11 +1,353 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>PakePlus</title>
-    </head>
-    <body>
-        PakePlus
-    </body>
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>小票机测试</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Courier New", monospace;
+        background: #1a1a2e;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #eee;
+      }
+
+      .card {
+        background: #16213e;
+        border: 1px solid #0f3460;
+        border-radius: 16px;
+        padding: 40px;
+        width: 420px;
+        box-shadow: 0 0 40px rgba(15, 52, 96, 0.6);
+      }
+
+      h1 {
+        font-size: 20px;
+        letter-spacing: 2px;
+        color: #e94560;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+      }
+
+      .subtitle {
+        font-size: 12px;
+        color: #555;
+        margin-bottom: 30px;
+        letter-spacing: 1px;
+      }
+
+      .status-bar {
+        background: #0f3460;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 24px;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 46px;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #555;
+        flex-shrink: 0;
+        transition: background 0.3s;
+      }
+
+      .dot.connected {
+        background: #4ecca3;
+        box-shadow: 0 0 8px #4ecca3;
+      }
+      .dot.error {
+        background: #e94560;
+        box-shadow: 0 0 8px #e94560;
+      }
+
+      #statusText {
+        color: #aaa;
+        font-size: 13px;
+      }
+
+      .btn {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: "Courier New", monospace;
+        letter-spacing: 1px;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-bottom: 12px;
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+
+      .btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      .btn-connect {
+        background: #0f3460;
+        color: #4ecca3;
+        border: 1px solid #4ecca3;
+      }
+
+      .btn-connect:hover:not(:disabled) {
+        background: #4ecca3;
+        color: #1a1a2e;
+      }
+
+      .btn-print {
+        background: #e94560;
+        color: #fff;
+      }
+
+      .btn-print:hover:not(:disabled) {
+        background: #c73652;
+        transform: translateY(-1px);
+      }
+
+      .log-box {
+        background: #0a0a1a;
+        border: 1px solid #0f3460;
+        border-radius: 8px;
+        padding: 14px;
+        font-size: 12px;
+        color: #4ecca3;
+        min-height: 100px;
+        max-height: 160px;
+        overflow-y: auto;
+        line-height: 1.8;
+        margin-top: 8px;
+      }
+
+      .log-box .err {
+        color: #e94560;
+      }
+      .log-box .info {
+        color: #aaa;
+      }
+
+      .tip {
+        margin-top: 20px;
+        font-size: 11px;
+        color: #444;
+        line-height: 1.8;
+        border-top: 1px solid #0f3460;
+        padding-top: 16px;
+      }
+
+      .tip span {
+        color: #e94560;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>🖨 小票机测试</h1>
+      <p class="subtitle">WebUSB · ESC/POS · Chrome Only</p>
+
+      <div class="status-bar">
+        <div class="dot" id="dot"></div>
+        <span id="statusText">未连接 — 请先点击连接打印机</span>
+      </div>
+
+      <button
+        class="btn btn-connect"
+        id="btnConnect"
+        onclick="connectPrinter()"
+      >
+        连接打印机
+      </button>
+
+      <button
+        class="btn btn-print"
+        id="btnPrint"
+        onclick="testPrint()"
+        disabled
+      >
+        打印测试一行字
+      </button>
+
+      <div class="log-box" id="log">等待操作...<br /></div>
+
+      <div class="tip">
+        ⚠ 注意事项：<br />
+        1. 必须使用 <span>Chrome</span> 浏览器<br />
+        2. 打印机通过 <span>USB</span> 连接电脑<br />
+        3. 若连接失败请尝试用 <span>Zadig</span> 替换驱动
+      </div>
+    </div>
+
+    <script>
+      let device = null;
+
+      function log(msg, type = "") {
+        const box = document.getElementById("log");
+        const line = document.createElement("div");
+        line.className = type;
+        line.textContent = "› " + msg;
+        box.appendChild(line);
+        box.scrollTop = box.scrollHeight;
+      }
+
+      function setStatus(msg, state = "") {
+        document.getElementById("statusText").textContent = msg;
+        const dot = document.getElementById("dot");
+        dot.className = "dot " + state;
+      }
+
+      // 连接打印机
+      async function connectPrinter() {
+        try {
+          log("正在请求 USB 设备...", "info");
+
+          device = await navigator.usb.requestDevice({ filters: [] });
+          log("已选择设备: " + device.productName);
+
+          await device.open();
+          log("USB 设备已打开");
+
+          // 选择配置
+          if (device.configuration === null) {
+            await device.selectConfiguration(1);
+          }
+          log("已选择配置 1");
+
+          // 认领接口
+          await device.claimInterface(0);
+          log("已认领接口 0");
+
+          setStatus(
+            "已连接: " + (device.productName || "USB打印机"),
+            "connected",
+          );
+          document.getElementById("btnPrint").disabled = false;
+          document.getElementById("btnConnect").textContent = "重新连接";
+          log("✅ 打印机连接成功！可以打印了");
+        } catch (err) {
+          setStatus("连接失败", "error");
+          log("❌ 连接失败: " + err.message, "err");
+
+          if (err.message.includes("Unable to claim interface")) {
+            log("提示：系统驱动占用了设备，请用 Zadig 工具替换驱动", "err");
+          }
+          if (err.message.includes("No device selected")) {
+            log("提示：你关闭了选择框，没有选择设备", "info");
+          }
+        }
+      }
+
+      // 发送数据到打印机
+      async function sendData(data) {
+        // 找到 OUT 端点
+        const iface = device.configuration.interfaces[0];
+        const endpoint = iface.alternate.endpoints.find(
+          (e) => e.direction === "out",
+        );
+
+        if (!endpoint) {
+          throw new Error("找不到输出端点，请检查接口配置");
+        }
+
+        await device.transferOut(endpoint.endpointNumber, data);
+      }
+
+      // GBK 编码（通过 TextDecoder 转换）
+      // 热敏打印机通常支持 GBK，我们这里用一个简单方案：
+      // 发送 ESC/POS 初始化指令 + 纯 ASCII 文本测试
+      // 如需中文可后续升级
+
+      // 打印测试
+      async function testPrint() {
+        if (!device) {
+          log("请先连接打印机", "err");
+          return;
+        }
+
+        const confirmed = confirm("确认打印测试小票吗？");
+        if (!confirmed) return;
+
+        try {
+          log("开始发送打印指令...");
+
+          const ESC = 0x1b;
+          const GS = 0x1d;
+          const LF = 0x0a;
+
+          // 把所有指令拼成一个 Uint8Array
+          const encoder = new TextEncoder(); // UTF-8，先测试ASCII
+
+          const chunks = [];
+
+          // 1. 初始化打印机
+          chunks.push(new Uint8Array([ESC, 0x40]));
+
+          // 2. 居中对齐
+          chunks.push(new Uint8Array([ESC, 0x61, 0x01]));
+
+          // 3. 打印一行字（ASCII 测试）
+          chunks.push(encoder.encode("Hello, Printer!\n"));
+          chunks.push(new Uint8Array([LF]));
+
+          // 4. 打印分隔线
+          chunks.push(encoder.encode("------------------------\n"));
+          chunks.push(new Uint8Array([LF]));
+
+          // 5. 左对齐
+          chunks.push(new Uint8Array([ESC, 0x61, 0x00]));
+
+          // 6. 打印时间
+          const now = new Date().toLocaleString("zh-CN");
+          chunks.push(encoder.encode("Time: " + now + "\n"));
+          chunks.push(new Uint8Array([LF, LF, LF]));
+
+          // 7. 切纸
+          chunks.push(new Uint8Array([GS, 0x56, 0x41, 0x00]));
+
+          // 合并所有 chunk
+          const total = chunks.reduce((sum, c) => sum + c.length, 0);
+          const buffer = new Uint8Array(total);
+          let offset = 0;
+          for (const chunk of chunks) {
+            buffer.set(chunk, offset);
+            offset += chunk.length;
+          }
+
+          await sendData(buffer);
+          log("✅ 打印指令发送成功！");
+        } catch (err) {
+          log("❌ 打印失败: " + err.message, "err");
+
+          if (err.message.includes("transferOut")) {
+            log("提示：数据发送失败，请检查端点号是否正确", "err");
+          }
+        }
+      }
+
+      // 检查浏览器是否支持 WebUSB
+      window.onload = () => {
+        if (!navigator.usb) {
+          setStatus("浏览器不支持 WebUSB", "error");
+          log("❌ 当前浏览器不支持 WebUSB，请使用 Chrome 或 Edge", "err");
+          document.getElementById("btnConnect").disabled = true;
+        } else {
+          log("✅ 浏览器支持 WebUSB，可以开始连接", "info");
+        }
+      };
+    </script>
+  </body>
 </html>
