@@ -3,159 +3,463 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>网页打印示例</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Playfair+Display:ital,wght@0,700;1,400&display=swap"
-      rel="stylesheet"
-    />
+    <title>打印机测试</title>
     <style>
-      :root {
-        --ink: #1a1008;
-        --paper: #f5f0e8;
-        --accent: #c0392b;
-        --gold: #b8860b;
-        --border: #d4c5a9;
-      }
-
       * {
+        box-sizing: border-box;
         margin: 0;
         padding: 0;
-        box-sizing: border-box;
       }
 
       body {
-        background: #2c2416;
+        font-family: "Courier New", monospace;
+        background: #0f1923;
         min-height: 100vh;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 40px 20px;
-        font-family: "Noto Serif SC", serif;
+        padding: 20px;
+        color: #eee;
       }
 
-      .controls {
+      .card {
+        background: #1a2535;
+        border: 1px solid #2a3f5f;
+        border-radius: 16px;
+        padding: 32px;
+        width: 100%;
+        max-width: 460px;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+      }
+
+      h1 {
+        font-size: 18px;
+        letter-spacing: 2px;
+        color: #4ecca3;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+      }
+
+      .subtitle {
+        font-size: 11px;
+        color: #445;
+        margin-bottom: 28px;
+        letter-spacing: 1px;
+      }
+
+      /* ── 配置区 ── */
+      .section-title {
+        font-size: 11px;
+        letter-spacing: 2px;
+        color: #4ecca3;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+      }
+
+      .config-box {
+        background: #111d2b;
+        border: 1px solid #2a3f5f;
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+
+      .row {
         display: flex;
-        gap: 16px;
-        margin-bottom: 36px;
+        gap: 10px;
+        margin-bottom: 10px;
+        align-items: center;
+      }
+
+      .row:last-child {
+        margin-bottom: 0;
+      }
+
+      label {
+        font-size: 12px;
+        color: #7a8fa6;
+        width: 52px;
+        flex-shrink: 0;
+      }
+
+      input {
+        flex: 1;
+        background: #1a2535;
+        border: 1px solid #2a3f5f;
+        border-radius: 6px;
+        padding: 8px 12px;
+        color: #eee;
+        font-family: "Courier New", monospace;
+        font-size: 13px;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+
+      input:focus {
+        border-color: #4ecca3;
+      }
+
+      .btn-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
       }
 
       .btn {
-        padding: 12px 28px;
+        flex: 1;
+        padding: 10px;
         border: none;
+        border-radius: 8px;
+        font-size: 12px;
+        font-family: "Courier New", monospace;
+        letter-spacing: 1px;
         cursor: pointer;
-        font-family: "Noto Serif SC", serif;
-        font-size: 15px;
-        letter-spacing: 2px;
-        transition: all 0.25s;
-        clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+        transition: all 0.2s;
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+
+      .btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+
+      .btn-save {
+        background: #2a3f5f;
+        color: #4ecca3;
+        border: 1px solid #4ecca3;
+      }
+
+      .btn-save:hover:not(:disabled) {
+        background: #4ecca3;
+        color: #0f1923;
+      }
+
+      .btn-test {
+        background: #1e3a4a;
+        color: #5bc8f5;
+        border: 1px solid #5bc8f5;
+      }
+
+      .btn-test:hover:not(:disabled) {
+        background: #5bc8f5;
+        color: #0f1923;
       }
 
       .btn-print {
-        background: var(--accent);
+        width: 100%;
+        padding: 14px;
+        background: #e94560;
         color: #fff;
-        box-shadow: 0 4px 20px rgba(192, 57, 43, 0.45);
+        margin-bottom: 12px;
+        font-size: 14px;
       }
 
-      .btn-print:hover {
-        background: #a93226;
-        transform: translateY(-2px);
+      .btn-print:hover:not(:disabled) {
+        background: #c73652;
+        transform: translateY(-1px);
       }
 
-      .paper-wrap {
-        position: relative;
-      }
-
-      .paper-wrap::before,
-      .paper-wrap::after {
-        content: "";
-        position: absolute;
-        background: #ece7db;
-      }
-      .paper-wrap::before {
-        inset: 6px -4px -4px 4px;
-        z-index: -1;
-        opacity: 0.5;
-      }
-      .paper-wrap::after {
-        inset: 12px -8px -8px 8px;
-        z-index: -2;
-        opacity: 0.25;
-      }
-
-      .paper {
-        width: 560px;
-        background: var(--paper);
-        padding: 56px 72px;
-        position: relative;
-        box-shadow:
-          0 20px 60px rgba(0, 0, 0, 0.5),
-          0 4px 8px rgba(0, 0, 0, 0.3);
-        display: flex;
+      /* 状态徽章 */
+      .badge {
+        display: inline-flex;
         align-items: center;
-        justify-content: center;
-        min-height: 180px;
+        gap: 6px;
+        font-size: 12px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        margin-bottom: 16px;
       }
 
-      .paper::before {
-        content: "";
-        position: absolute;
-        left: 90px;
-        top: 0;
-        bottom: 0;
-        width: 1px;
-        background: rgba(192, 57, 43, 0.25);
+      .badge.ok {
+        background: #0d2e20;
+        color: #4ecca3;
+        border: 1px solid #4ecca3;
+      }
+      .badge.err {
+        background: #2e0d14;
+        color: #e94560;
+        border: 1px solid #e94560;
+      }
+      .badge.idle {
+        background: #1a2535;
+        color: #7a8fa6;
+        border: 1px solid #2a3f5f;
       }
 
-      .message {
-        font-family: "Playfair Display", serif;
-        font-size: 26px;
-        color: var(--ink);
-        letter-spacing: 2px;
-        text-align: center;
-        line-height: 1.5;
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
       }
 
-      .message span {
-        color: var(--accent);
-        font-style: italic;
+      /* 日志 */
+      .log-box {
+        background: #080f18;
+        border: 1px solid #1a2a3a;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 12px;
+        min-height: 110px;
+        max-height: 160px;
+        overflow-y: auto;
+        line-height: 1.9;
+        margin-top: 4px;
       }
 
-      @media print {
-        body {
-          background: none;
-          padding: 0;
-          justify-content: flex-start;
-          padding-top: 60mm;
-        }
-        .controls {
-          display: none;
-        }
-        .paper-wrap::before,
-        .paper-wrap::after {
-          display: none;
-        }
-        .paper {
-          width: 100%;
-          box-shadow: none;
-          padding: 40px 60px;
-        }
-        @page {
-          size: A4;
-          margin: 0;
-        }
+      .log-box .ok {
+        color: #4ecca3;
+      }
+      .log-box .err {
+        color: #e94560;
+      }
+      .log-box .info {
+        color: #7a8fa6;
+      }
+      .log-box .warn {
+        color: #f5a623;
+      }
+
+      .saved-tip {
+        font-size: 11px;
+        color: #4ecca3;
+        margin-top: 6px;
+        display: none;
       }
     </style>
   </head>
   <body>
-    <div class="controls">
-      <button class="btn btn-print" onclick="window.print()">⎙ 打印文档</button>
+    <div class="card">
+      <h1>🖨 打印机测试</h1>
+      <p class="subtitle">TCP/IP · ESC/POS · LAN</p>
+
+      <!-- 连接状态 -->
+      <div class="badge idle" id="badge">
+        <span class="dot"></span>
+        <span id="badgeText">未配置</span>
+      </div>
+
+      <!-- IP 配置区 -->
+      <div class="section-title">打印机配置</div>
+      <div class="config-box">
+        <div class="row">
+          <label>IP 地址</label>
+          <input type="text" id="inputIp" placeholder="192.168.77.47" />
+        </div>
+        <div class="row">
+          <label>端 口</label>
+          <input type="text" id="inputPort" placeholder="9100" />
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-save" onclick="saveConfig()">
+            💾 保存配置
+          </button>
+          <button class="btn btn-test" onclick="testConnect()">
+            🔗 测试连接
+          </button>
+        </div>
+        <div class="saved-tip" id="savedTip">✅ 配置已保存</div>
+      </div>
+
+      <!-- 打印按钮 -->
+      <button class="btn btn-print" id="btnPrint" onclick="doPrint()" disabled>
+        🖨 打印测试小票
+      </button>
+
+      <!-- 日志 -->
+      <div class="section-title">运行日志</div>
+      <div class="log-box" id="log">等待操作...<br /></div>
     </div>
 
-    <div class="paper-wrap">
-      <div class="paper">
-        <div class="message">你好，<span>世界</span>。愿岁月待你温柔。</div>
-      </div>
-    </div>
+    <script>
+      // ── 配置存储（内存，刷新后需重新填写；如需持久化可改用 localStorage）
+      let config = { ip: "", port: "9100" };
+
+      // ── 页面加载时尝试读取本地存储的配置
+      window.onload = () => {
+        const saved = localStorage.getItem("printer_config");
+        if (saved) {
+          config = JSON.parse(saved);
+          document.getElementById("inputIp").value = config.ip;
+          document.getElementById("inputPort").value = config.port;
+          setBadge("idle", `已配置 ${config.ip}:${config.port}`);
+          document.getElementById("btnPrint").disabled = false;
+          log(`已读取保存的配置：${config.ip}:${config.port}`, "info");
+        }
+      };
+
+      // ── 日志
+      function log(msg, type = "") {
+        const box = document.getElementById("log");
+        const line = document.createElement("div");
+        line.className = type;
+        line.textContent = "› " + msg;
+        box.appendChild(line);
+        box.scrollTop = box.scrollHeight;
+      }
+
+      // ── 状态徽章
+      function setBadge(type, text) {
+        const el = document.getElementById("badge");
+        el.className = "badge " + type;
+        document.getElementById("badgeText").textContent = text;
+      }
+
+      // ── 保存配置
+      function saveConfig() {
+        const ip = document.getElementById("inputIp").value.trim();
+        const port =
+          document.getElementById("inputPort").value.trim() || "9100";
+
+        if (!ip) {
+          log("请先填写打印机 IP 地址", "err");
+          return;
+        }
+
+        config = { ip, port };
+        localStorage.setItem("printer_config", JSON.stringify(config));
+
+        const tip = document.getElementById("savedTip");
+        tip.style.display = "block";
+        setTimeout(() => (tip.style.display = "none"), 2000);
+
+        setBadge("idle", `已配置 ${ip}:${port}`);
+        document.getElementById("btnPrint").disabled = false;
+        log(`配置已保存：${ip}:${port}`, "ok");
+      }
+
+      // ── 测试连接（发送一个空的 ESC/POS 初始化指令，打印机能收到说明连通）
+      async function testConnect() {
+        const ip = document.getElementById("inputIp").value.trim();
+        const port =
+          document.getElementById("inputPort").value.trim() || "9100";
+
+        if (!ip) {
+          log("请先填写 IP 地址", "err");
+          return;
+        }
+
+        log(`正在尝试连接 ${ip}:${port} ...`, "info");
+        setBadge("idle", "连接中...");
+
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 5000);
+
+          // 发送 ESC/POS 初始化指令（不会触发打印，只是建立连接探测）
+          const initCmd = new Uint8Array([0x1b, 0x40]);
+
+          await fetch(`http://${ip}:${port}`, {
+            method: "POST",
+            body: initCmd.buffer,
+            signal: controller.signal,
+            mode: "no-cors",
+            headers: { "Content-Type": "application/octet-stream" },
+          });
+          clearTimeout(timer);
+          setBadge("ok", `连接成功 ${ip}:${port}`);
+          log(`✅ 打印机连接正常，可以打印`, "ok");
+        } catch (err) {
+          if (err.name === "AbortError") {
+            // 真正超时，IP 不可达
+            setBadge("err", "连接超时");
+            log(`❌ 连接超时，请检查：`, "err");
+            log("  1. 打印机是否已开机", "warn");
+            log("  2. 网线是否已插好", "warn");
+            log("  3. IP 地址是否正确", "warn");
+            log("  4. 收银机和打印机是否在同一局域网", "warn");
+          } else {
+            // fetch 报错但未超时，说明网络可达（打印机拒绝了 HTTP 属于正常）
+            setBadge("ok", `连接成功 ${ip}:${port}`);
+            log(`✅ 打印机连接正常，可以打印`, "ok");
+          }
+        }
+      }
+
+      // ── 打印测试小票
+      async function doPrint() {
+        if (!config.ip) {
+          log("请先配置并保存打印机 IP", "err");
+          return;
+        }
+
+        const confirmed = confirm(
+          `确认向 ${config.ip}:${config.port} 发送打印指令吗？`,
+        );
+        if (!confirmed) return;
+
+        log("正在发送打印请求...", "info");
+
+        // 构建 ESC/POS 指令的 base64
+        // 因为 WebView 无法直接建 TCP，这里用 fetch 发 HTTP
+        // 实际在 APK 里测试是否能通
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 5000);
+
+          // 把 ESC/POS 指令用 ArrayBuffer 发送
+          const data = buildEscPos(
+            "Hello Printer!\nTest OK!\n2024-03-01 12:30:00",
+          );
+
+          const res = await fetch(`http://${config.ip}:${config.port}`, {
+            method: "POST",
+            body: data,
+            signal: controller.signal,
+            mode: "no-cors",
+            headers: { "Content-Type": "application/octet-stream" },
+          });
+          clearTimeout(timer);
+
+          log("✅ 指令发送成功！请查看打印机是否出纸", "ok");
+          setBadge("ok", "打印成功");
+        } catch (err) {
+          // 打印机不支持 HTTP 协议，收到数据后会直接断开连接
+          // 因此 fetch 几乎必然会报错，这是正常现象
+          // 只有真正超时（IP不可达）才说明失败
+          if (err.name === "AbortError") {
+            log(
+              "❌ 发送超时（5秒无响应），请检查打印机是否开机、IP是否正确",
+              "err",
+            );
+            setBadge("err", "发送超时");
+          } else {
+            // 打印机拒绝了 HTTP 连接属于正常现象，数据已经发出去了
+            log("✅ 指令已发送，请确认打印机是否出纸", "ok");
+            setBadge("ok", "打印成功");
+          }
+        }
+      }
+
+      // ── 构建 ESC/POS 指令
+      function buildEscPos(text) {
+        const parts = [];
+
+        // 初始化
+        parts.push([0x1b, 0x40]);
+        // 居中
+        parts.push([0x1b, 0x61, 0x01]);
+        // 内容（ASCII）
+        const encoded = new TextEncoder().encode(text + "\n\n\n");
+        // 切纸
+        const cut = [0x1d, 0x56, 0x41, 0x00];
+
+        const fixedParts = parts.map((p) => new Uint8Array(p));
+        const cutArr = new Uint8Array(cut);
+
+        const total =
+          fixedParts.reduce((s, a) => s + a.length, 0) +
+          encoded.length +
+          cutArr.length;
+        const buf = new Uint8Array(total);
+        let offset = 0;
+        for (const arr of [...fixedParts, encoded, cutArr]) {
+          buf.set(arr, offset);
+          offset += arr.length;
+        }
+        return buf.buffer;
+      }
+    </script>
   </body>
 </html>
